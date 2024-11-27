@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	_, err := config.ConnectDb()
+	db, err := config.ConnectDb()
 	if err != nil {
 		panic(err)
 	}
@@ -18,7 +18,9 @@ func main() {
 
 	router.Use(gin.Logger())
 
-	authController := controller.AuthController{}
+	authController := controller.AuthController{
+		Db: db,
+	}
 
 	router.GET("/ping", Ping)
 	router.POST("/v1/auth/register", authController.Register)

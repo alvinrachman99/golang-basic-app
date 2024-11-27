@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"database/sql"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -8,6 +9,7 @@ import (
 )
 
 type AuthController struct {
+	Db *sql.DB
 }
 
 type RegisterRequest struct {
@@ -15,6 +17,13 @@ type RegisterRequest struct {
 	Password string `json:"password"`
 	ImgUrl   string `json:"img_url"`
 }
+
+var (
+	queryCreate = `
+		INSERT INTO auth (email, password, img_url)
+		VALUES ($1, $2, $3)
+	`
+)
 
 func (a *AuthController) Register(ctx *gin.Context) {
 	var req = RegisterRequest{}
@@ -36,7 +45,27 @@ func (a *AuthController) Register(ctx *gin.Context) {
 		return
 	}
 
+	stmt, err := a.Db.Prepare(queryCreate)
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	_, err = stmt.Exec(
+		req.Email,
+		req.Password,
+		req.ImgUrl,
+	)
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{
-		"payload": req,
+		"payload": "CREATED SUCCESS",
 	})
 }
